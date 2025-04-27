@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Indonesian Food Prediction</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4 relative">
+
+  <!-- Tombol kembali saat kamera aktif -->
+  <button id="cancelCamera" class="hidden absolute top-4 left-4 bg-white text-black rounded-full p-2 shadow hover:bg-gray-200 z-50">
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+    </svg>
+  </button>
+
+  <div class="bg-white shadow-lg rounded-xl p-6 sm:p-8 w-full max-w-md flex flex-col gap-4 items-center">
+    <h1 class="text-2xl font-bold text-center">Indonesian Food Prediction</h1>
+
+    <!-- Tombol utama -->
+    <form id="submitForm" action="/predict" method="post" enctype="multipart/form-data" class="flex flex-col gap-2 items-center w-full">
+      <input type="text" name="input">
+      <button id="inputBtn" type="submit" class="bg-blue-600 text-white py-2 rounded hover:bg-blue-700 w-full">Submit</button>
+    </form>
+
+    <!-- Input upload -->
+    <!-- <input type="file" id="fileInput" accept="image/*" name="file" class="hidden"> -->
+    
+
+    <!-- Kamera -->
+    <!-- <video id="video" class="rounded shadow max-h-64 hidden" autoplay playsinline></video>
+    <button id="captureBtn" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 hidden">Capture</button> -->
+
+    <!-- Preview + Submit -->
+    <div id="previewSection" class="hidden flex flex-col justify-center items-center gap-4 w-full">
+      <img id="imagePreview" src="" alt="Preview" class="rounded shadow max-h-64">
+      <form id="submitForm" action="/predict" method="post" enctype="multipart/form-data" class="mt-4 flex flex-col gap-2 items-center w-full">
+        <input type="file" name="file" id="imageInputHidden" class="hidden">
+        <button type="submit" class="bg-blue-600 text-white py-2 rounded hover:bg-blue-700 w-full">Submit Image</button>
+      </form>
+      <div class="w-full flex justify-start">
+        <button id="backBtn" class="text-sm text-gray-600 mt-0 hover:underline">← Back to Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const uploadBtn = document.getElementById('uploadBtn');
+    const inputBtn = document.getElementById('inputBtn')
+    const cameraBtn = document.getElementById('cameraBtn');
+    const fileInput = document.getElementById('fileInput');
+    const video = document.getElementById('video');
+    const captureBtn = document.getElementById('captureBtn');
+    const previewSection = document.getElementById('previewSection');
+    const imagePreview = document.getElementById('imagePreview');
+    const imageInputHidden = document.getElementById('imageInputHidden');
+    const backBtn = document.getElementById('backBtn');
+    const mainButtons = document.getElementById('mainButtons');
+    const cancelCamera = document.getElementById('cancelCamera');
+
+    let stream;
+
+    // Upload button click
+    inputBtn.addEventListener('click', () => {
+
+    })
+
+    uploadBtn.addEventListener('click', () => {
+      fileInput.click();
+    });
+
+    fileInput.addEventListener('change', () => {
+      const file = fileInput.files[0];
+      if (file) {
+        imagePreview.src = URL.createObjectURL(file);
+        previewSection.classList.remove('hidden');
+        imageInputHidden.files = fileInput.files;
+        mainButtons.classList.add('hidden');
+      }
+    });
+
+    // Camera button
+    cameraBtn.addEventListener('click', async () => {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+        video.classList.remove('hidden');
+        captureBtn.classList.remove('hidden');
+        mainButtons.classList.add('hidden');
+        cancelCamera.classList.remove('hidden');
+      } catch (err) {
+        alert('Error accessing camera: ' + err.message);
+      }
+    });
+
+    // Cancel camera
+    cancelCamera.addEventListener('click', () => {
+      stopCamera();
+      video.classList.add('hidden');
+      captureBtn.classList.add('hidden');
+      cancelCamera.classList.add('hidden');
+      mainButtons.classList.remove('hidden');
+    });
+
+    // Capture image
+    captureBtn.addEventListener('click', () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext('2d').drawImage(video, 0, 0);
+      canvas.toBlob(blob => {
+        const file = new File([blob], 'captured.jpg', { type: 'image/jpeg' });
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(file);
+        imageInputHidden.files = dataTransfer.files;
+        imagePreview.src = URL.createObjectURL(file);
+        previewSection.classList.remove('hidden');
+
+        // Reset UI
+        video.classList.add('hidden');
+        captureBtn.classList.add('hidden');
+        cancelCamera.classList.add('hidden');
+        stopCamera();
+      }, 'image/jpeg');
+    });
+
+    // Back to main menu
+    backBtn.addEventListener('click', () => {
+      previewSection.classList.add('hidden');
+      imagePreview.src = '';
+      imageInputHidden.value = '';
+      fileInput.value = '';
+      mainButtons.classList.remove('hidden');
+    });
+
+    // Stop camera
+    function stopCamera() {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+    }
+  </script>
+</body>
+</html>
