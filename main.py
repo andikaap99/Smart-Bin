@@ -16,6 +16,8 @@ bg = BackgroundTasks()
 templates = Jinja2Templates(directory="templates")
 servo_predict = -1
 servo_status = 0
+servo_read = False  # baru dibaca ESP atau belum
+
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -33,7 +35,8 @@ def preprocess_image(image_bytes):
     return np.expand_dims(img, axis=0)
 
 async def predict_image(file: UploadFile = File(...)):
-    global servo_predict
+    global servo_predict, servo_read
+    servo_read = False 
     image = await file.read()
 
     filename = f"{uuid.uuid4().hex}.jpg"
@@ -52,7 +55,7 @@ async def predict_image(file: UploadFile = File(...)):
     elif 7 <= pred_class <= 12:
         servo_predict = 1
     else:
-        servo_predict = 0 
+        servo_predict = -1 
 
     return{
         "servo_predict": servo_predict,
@@ -78,10 +81,22 @@ async def read_root(request: Request):
 
 @app.get("/predict")
 def get_servo_status(): 
-    bg.add_task(reset_predict)   
-    return {
-        "servo_predict": servo_predict
-    }
+    # bg.add_task(reset_predict)   
+    # return {
+    #     "servo_predict": servo_predict
+    # }
+    global servo_read
+    if not servo_read:
+        servo_read = True  # ditandai sudah dibaca
+        bg.add_task(reset_predict)
+        return {
+            "servo_predict": servo_predict
+        }
+    else:
+        return {
+            "servo_predict": -1
+        }
+
 
 @app.post("/predict", response_class=HTMLResponse)
 async def predict(request: Request, file: UploadFile = File(...)):
