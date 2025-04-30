@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Prediction Result</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+  <div class="bg-white shadow-lg rounded-xl p-6 sm:p-8 w-full max-w-md">
+    <h1 class="text-2xl font-bold mb-4 text-center">Prediction Result</h1>
+    
+    {% if uploaded_image %}
+    <div class="text-center mb-4">
+      <h2 class="font-semibold text-gray-700 mb-2 text-sm">Uploaded Image:</h2>
+      <img src="{{ uploaded_image }}" alt="Uploaded Image" class="mx-auto rounded shadow max-h-64 object-contain">
+    </div>
+    {% endif %}
+
+    {% if result %}
+    <div class="p-4 bg-green-100 text-green-800 rounded text-center font-semibold">
+      Prediction: {{ result }}
+    </div>
+    {% endif %}
+
+    <div class="text-center mt-6">
+      <a href="/" class="text-blue-600 hover:underline text-sm font-medium">
+        Upload Another Image
+      </a>
+    </div>
+  </div>
+</body>
+</html>

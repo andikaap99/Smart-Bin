@@ -19,18 +19,17 @@
     <h1 class="text-2xl font-bold text-center">Indonesian Food Prediction</h1>
 
     <!-- Tombol utama -->
-    <form id="submitForm" action="/predict" method="post" enctype="multipart/form-data" class="flex flex-col gap-2 items-center w-full">
-      <input type="text" name="input">
-      <button id="inputBtn" type="submit" class="bg-blue-600 text-white py-2 rounded hover:bg-blue-700 w-full">Submit</button>
-    </form>
+    <div id="mainButtons" class="flex flex-col gap-4 w-full">
+      <button id="uploadBtn" class="bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Upload Image</button>
+      <button id="cameraBtn" class="bg-green-600 text-white py-2 rounded hover:bg-green-700">Open Camera</button>
+    </div>
 
     <!-- Input upload -->
-    <!-- <input type="file" id="fileInput" accept="image/*" name="file" class="hidden"> -->
-    
+    <input type="file" id="fileInput" accept="image/*" name="file" class="hidden">
 
     <!-- Kamera -->
-    <!-- <video id="video" class="rounded shadow max-h-64 hidden" autoplay playsinline></video>
-    <button id="captureBtn" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 hidden">Capture</button> -->
+    <video id="video" class="rounded shadow max-h-64 hidden" autoplay playsinline></video>
+    <button id="captureBtn" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 hidden">Capture</button>
 
     <!-- Preview + Submit -->
     <div id="previewSection" class="hidden flex flex-col justify-center items-center gap-4 w-full">
@@ -47,7 +46,6 @@
 
   <script>
     const uploadBtn = document.getElementById('uploadBtn');
-    const inputBtn = document.getElementById('inputBtn')
     const cameraBtn = document.getElementById('cameraBtn');
     const fileInput = document.getElementById('fileInput');
     const video = document.getElementById('video');
@@ -62,10 +60,6 @@
     let stream;
 
     // Upload button click
-    inputBtn.addEventListener('click', () => {
-
-    })
-
     uploadBtn.addEventListener('click', () => {
       fileInput.click();
     });
