@@ -21,8 +21,8 @@ servo_read = False  # baru dibaca ESP atau belum
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-model = tf.keras.models.load_model("model/model_2.keras")
-class_names = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
+model = tf.keras.models.load_model("model/modelV1.keras")
+class_names = ['Cardboard', 'Glass']
 def reset_predict():
     global servo_predict
     time.sleep(2)
@@ -30,7 +30,7 @@ def reset_predict():
     servo_predict = -1
     print(servo_predict)
 def preprocess_image(image_bytes):
-    img = Image.open(io.BytesIO(image_bytes)).convert("RGB").resize((224, 224))
+    img = Image.open(io.BytesIO(image_bytes)).convert("RGB").resize((174,256))
     img = np.array(img).astype(np.float32)
     return np.expand_dims(img, axis=0)
 
@@ -46,16 +46,17 @@ async def predict_image(file: UploadFile = File(...)):
 
     input_tensor = preprocess_image(image)
     prediction = model.predict(input_tensor)
-    predicted_class_index = np.argmax(prediction[0])
-    pred_class = int(class_names[predicted_class_index])  
+    # predicted_class_index = np.argmax(prediction[0])
+    # pred_class = int(class_names[predicted_class_index])  
 
-    # Logika servo_predict
-    if 0 <= pred_class <= 6:
-        servo_predict = 0
-    elif 7 <= pred_class <= 12:
+    if prediction == 1:
+        print(prediction)
         servo_predict = 1
+    elif prediction < 1:
+        print(prediction)
+        servo_predict = 0
     else:
-        servo_predict = -1 
+        servo_predict = -1
 
     return{
         "servo_predict": servo_predict,
@@ -68,9 +69,14 @@ def servo(input):
     return {"message": "Status updated", "status":servo_status} 
 
 def show_predict(request: Request, servo, filename):
+    if servo == '1':
+        hasil = 'Glass'
+    else:
+        hasil = 'Cardboard'
+
     return templates.TemplateResponse("predict.html", {
         "request": request,
-        "result": servo,
+        "result": hasil,
         "uploaded_image": f"/static/uploads/{filename}",
     })
 
