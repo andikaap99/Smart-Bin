@@ -2,141 +2,91 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Garbage Identification</title>
+  <title>BlubBlubFishyEat</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4 relative">
+<body class="bg-gray-900 min-h-screen flex items-center justify-center p-4 relative">
+  <div class="bg-cyan-800 shadow-xl rounded-xl p-6 sm:p-8 w-full max-w-md flex flex-col items-center">
+    <div class="flex flex-col mb-2">
+      <h1 class="text-3xl font-bold text-center text-white">BlubBlubFishyEat</h1>
+      <h1 class="text-xl font-semibold text-center text-white">Fish Feeder</h1>
+      <hr>
+    </div>
 
-  <!-- Tombol kembali saat kamera aktif -->
-  <button id="cancelCamera" class="hidden absolute top-4 left-4 bg-white text-black rounded-full p-2 shadow hover:bg-gray-200 z-50">
-    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-    </svg>
-  </button>
-
-  <div class="bg-white shadow-lg rounded-xl p-6 sm:p-8 w-full max-w-md flex flex-col items-center">
     <div class="flex flex-col mb-8">
-      <h1 class="text-2xl font-bold text-center">Garbage Identification</h1>
-      <h1 class="text-xl font-semibold text-center">Carboard & Glass</h1>
+      <table>
+        <tr class="text-center text-sm">
+          <td>
+            <h1 class="text-white font-bold">Status:</h1>
+          </td>
+          <td>
+            <h1 class="text-white"> </h1>
+          </td>
+          <td>
+            <p id="statusText" class="font-bold"> Loading...</p>
+          </td>
+        </tr>
+      </table>
     </div>
-    
-    <!-- Tombol utama -->
-    <div id="mainButtons" class="flex flex-col gap-4 w-full">
-      <button id="uploadBtn" class="bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Upload Image</button>
-      <button id="cameraBtn" class="bg-green-600 text-white py-2 rounded hover:bg-green-700">Open Camera</button>
-    </div>
-
-    <!-- Input upload -->
-    <input type="file" id="fileInput" accept="image/*" name="file" class="hidden">
-
-    <!-- Kamera -->
-    <video id="video" class="rounded shadow max-h-64 hidden" autoplay playsinline></video>
-    <button id="captureBtn" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 hidden">Capture</button>
 
     <!-- Preview + Submit -->
-    <div id="previewSection" class="hidden flex flex-col justify-center items-center gap-4 w-full">
-      <img id="imagePreview" src="" alt="Preview" class="rounded shadow max-h-64">
-      <form id="submitForm" action="/predict" method="post" enctype="multipart/form-data" class="mt-4 flex flex-col gap-2 items-center w-full">
-        <input type="file" name="file" id="imageInputHidden" class="hidden">
-        <button type="submit" class="bg-blue-600 text-white py-2 rounded hover:bg-blue-700 w-full">Submit Image</button>
-      </form>
-      <div class="w-full flex justify-start">
-        <button id="backBtn" class="text-sm text-gray-600 mt-0 hover:underline">← Back to Menu</button>
+    <div id="previewSection" class="flex flex-col justify-center items-center gap-4 w-full">
+      <img src="/static/Images/duragoooon.png" class="rounded max-h-64">
+      <div class="mt-4 flex flex-col gap-2 items-center w-full">
+        <button type="button" onclick="feedFish()" class="bg-blue-600 text-white font-bold py-2 rounded-lg hover:bg-blue-700 w-1/2">Feed</button>
       </div>
     </div>
   </div>
 
   <script>
-    const uploadBtn = document.getElementById('uploadBtn');
-    const cameraBtn = document.getElementById('cameraBtn');
-    const fileInput = document.getElementById('fileInput');
-    const video = document.getElementById('video');
-    const captureBtn = document.getElementById('captureBtn');
-    const previewSection = document.getElementById('previewSection');
-    const imagePreview = document.getElementById('imagePreview');
-    const imageInputHidden = document.getElementById('imageInputHidden');
-    const backBtn = document.getElementById('backBtn');
-    const mainButtons = document.getElementById('mainButtons');
-    const cancelCamera = document.getElementById('cancelCamera');
-
-    let stream;
-
-    // Upload button click
-    uploadBtn.addEventListener('click', () => {
-      fileInput.click();
-    });
-
-    fileInput.addEventListener('change', () => {
-      const file = fileInput.files[0];
-      if (file) {
-        imagePreview.src = URL.createObjectURL(file);
-        previewSection.classList.remove('hidden');
-        imageInputHidden.files = fileInput.files;
-        mainButtons.classList.add('hidden');
-      }
-    });
-
-    // Camera button
-    cameraBtn.addEventListener('click', async () => {
+    async function fetchStatus() {
       try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        video.srcObject = stream;
-        video.classList.remove('hidden');
-        captureBtn.classList.remove('hidden');
-        mainButtons.classList.add('hidden');
-        cancelCamera.classList.remove('hidden');
+        const res = await fetch("/status");
+        const data = await res.json();
+        const statusElement = document.getElementById("statusText");
+        const feedButton = document.querySelector("button[onclick='feedFish()']");
+
+        if (data.servo_status === 1) {
+          statusElement.textContent = "Connected";
+          statusElement.classList.add("text-green-400");
+          statusElement.classList.remove("text-red-400");
+
+          // Enable tombol Feed
+          feedButton.disabled = false;
+          feedButton.classList.remove("bg-gray-400", "cursor-not-allowed");
+          feedButton.classList.add("bg-blue-600", "hover:bg-blue-700");
+        } else {
+          statusElement.textContent = "Not Connected";
+          statusElement.classList.add("text-red-400");
+          statusElement.classList.remove("text-green-400");
+
+          // Disable tombol Feed
+          feedButton.disabled = true;
+          feedButton.classList.remove("bg-blue-600", "hover:bg-blue-700");
+          feedButton.classList.add("bg-gray-400", "cursor-not-allowed");
+        }
       } catch (err) {
-        alert('Error accessing camera: ' + err.message);
-      }
-    });
-
-    // Cancel camera
-    cancelCamera.addEventListener('click', () => {
-      stopCamera();
-      video.classList.add('hidden');
-      captureBtn.classList.add('hidden');
-      cancelCamera.classList.add('hidden');
-      mainButtons.classList.remove('hidden');
-    });
-
-    // Capture image
-    captureBtn.addEventListener('click', () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      canvas.getContext('2d').drawImage(video, 0, 0);
-      canvas.toBlob(blob => {
-        const file = new File([blob], 'captured.jpg', { type: 'image/jpeg' });
-        const dataTransfer = new DataTransfer();
-        dataTransfer.items.add(file);
-        imageInputHidden.files = dataTransfer.files;
-        imagePreview.src = URL.createObjectURL(file);
-        previewSection.classList.remove('hidden');
-
-        // Reset UI
-        video.classList.add('hidden');
-        captureBtn.classList.add('hidden');
-        cancelCamera.classList.add('hidden');
-        stopCamera();
-      }, 'image/jpeg');
-    });
-
-    // Back to main menu
-    backBtn.addEventListener('click', () => {
-      previewSection.classList.add('hidden');
-      imagePreview.src = '';
-      imageInputHidden.value = '';
-      fileInput.value = '';
-      mainButtons.classList.remove('hidden');
-    });
-
-    // Stop camera
-    function stopCamera() {
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
+        console.error("Failed to load status:", err);
+        document.getElementById("statusText").textContent = "Status: Error";
       }
     }
+
+    async function feedFish() {
+      const response = await fetch('/feed');
+      const data = await response.json();
+
+      if (data.servo_feed === 1) {
+        alert("Yum Yum Fish Eat Delicioso!");
+      } else {
+        alert("Servo is not connected or has been run.");
+      }
+    }
+
+    // Panggil pertama kali
+    fetchStatus();
+    // Ulangi setiap 3 detik
+    setInterval(fetchStatus, 3000);
   </script>
 </body>
 </html>

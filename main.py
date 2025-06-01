@@ -2,10 +2,7 @@ from fastapi import FastAPI, Request, UploadFile, File, BackgroundTasks
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
-import tensorflow as tf
 import uuid
-import numpy as np
-from PIL import Image
 import io
 import os
 import time
@@ -14,131 +11,46 @@ import time
 app = FastAPI()
 bg = BackgroundTasks()
 templates = Jinja2Templates(directory="templates")
-servo_predict = -1
+servo_feed = -1
 servo_status = 0
 servo_read = False  # baru dibaca ESP atau belum
 
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-model = tf.keras.models.load_model("model/modelV1.keras")
-class_names = ['Cardboard', 'Glass']
-def reset_predict():
-    global servo_predict
+def reset_servo():
+    global servo_feed, servo_read
     time.sleep(2)
     print(2)
-    servo_predict = -1
-    print(servo_predict)
-def preprocess_image(image_bytes):
-    img = Image.open(io.BytesIO(image_bytes)).convert("RGB").resize((174,256))
-    img = np.array(img).astype(np.float32)
-    return np.expand_dims(img, axis=0)
-
-async def predict_image(file: UploadFile = File(...)):
-    global servo_predict, servo_read
-    servo_read = False 
-    image = await file.read()
-
-    filename = f"{uuid.uuid4().hex}.jpg"
-    save_path = f"static/uploads/{filename}"
-    with open(save_path, "wb") as f:
-        f.write(image)
-
-    input_tensor = preprocess_image(image)
-    prediction = model.predict(input_tensor)
-    # predicted_class_index = np.argmax(prediction[0])
-    # pred_class = int(class_names[predicted_class_index])  
-
-    if prediction == 1:
-        print(prediction)
-        servo_predict = 1
-    elif prediction < 1:
-        print(prediction)
-        servo_predict = 0
-    else:
-        servo_predict = -1
-
-    return{
-        "servo_predict": servo_predict,
-        "filename": filename
-    }
+    servo_feed = -1
+    servo_read = False
+    print(servo_feed)
 
 def servo(input):
     global servo_status
     servo_status = int(input)
     return {"message": "Status updated", "status":servo_status} 
 
-def show_predict(request: Request, servo, filename):
-    if servo == '1':
-        hasil = 'Glass'
-    else:
-        hasil = 'Cardboard'
-
-    return templates.TemplateResponse("predict.html", {
-        "request": request,
-        "result": hasil,
-        "uploaded_image": f"/static/uploads/{filename}",
-    })
-
 
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
     return templates.TemplateResponse("index.html", {"request": request, "result": None})
 
-@app.get("/predict")
-def get_servo_status(): 
-    # bg.add_task(reset_predict)   
-    # return {
-    #     "servo_predict": servo_predict
-    # }
+@app.get("/feed")
+def get_servo_status(background_tasks: BackgroundTasks): 
     global servo_read
     if not servo_read:
-        servo_read = True  # ditandai sudah dibaca
-        bg.add_task(reset_predict)
+        servo_read = True
+        background_tasks.add_task(reset_servo)  # Gunakan parameter ini, bukan variabel global `bg`
         return {
-            "servo_predict": servo_predict
+            "servo_feed": 1
         }
     else:
         return {
-            "servo_predict": -1
+            "servo_feed": -1
         }
-
-
-@app.post("/predict", response_class=HTMLResponse)
-async def predict(request: Request, file: UploadFile = File(...)):
-    image = await predict_image(file)
     
-    
-    servo(image["servo_predict"])
-    # print(f"servo_predik ", image["servo_predict"])
-    return show_predict(request, str(image["servo_predict"]), image["filename"])
-
-
-    # image = await file.read()
-
-    # filename = f"{uuid.uuid4().hex}.jpg"
-    # save_path = f"static/uploads/{filename}"
-    # with open(save_path, "wb") as f:
-    #     f.write(image)
-
-    # input_tensor = preprocess_image(image)
-    # prediction = model.predict(input_tensor)
-    # predicted_class_index = np.argmax(prediction[0])
-    # pred_class = int(class_names[predicted_class_index])  
-
-    # # Logika servo_predict
-    # if 0 <= pred_class <= 6:
-    #     servo_predict = 0
-    # elif 7 <= pred_class <= 12:
-    #     servo_predict = 1
-    # else:
-    #     servo_predict = 0 
-
-    # servo_predict = str(servo_predict)
-
-
-    # return templates.TemplateResponse("predict.html", {
-    #     "request": request,
-    #     "result": servo_predict,
-    #     "uploaded_image": f"/static/uploads/{filename}",
-    # })
+@app.get("/status")
+async def get_status():
+    global servo_status
+    return {"servo_status": servo_status}
