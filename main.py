@@ -82,8 +82,18 @@ def show_predict(request: Request, servo, filename):
 
 
 @app.get("/", response_class=HTMLResponse)
+# async def read_root(request: Request):
+#     return templates.TemplateResponse("index.html", {"request": request, "result": None})
+
 async def read_root(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request, "result": None})
+    return """
+        <html>
+         <head><title>Ini Judul</title></head>
+         <body>
+            <h1>Stream from esp anjay</h1>
+            <img src="http://192.168.1.123:81/stream" width="640"/>
+         </body>
+"""
 
 @app.get("/predict")
 def get_servo_status(): 
