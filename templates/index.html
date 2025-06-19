@@ -31,7 +31,8 @@
     <input type="file" id="fileInput" accept="image/*" name="file" class="hidden">
 
     <!-- Kamera -->
-    <video id="video" class="rounded shadow max-h-64 hidden" autoplay playsinline></video>
+    <img id="video" src="https://esp.delta-zero.my.id/stream" crossorigin="anonymous" class="rounded shadow max-h-64 hidden" />
+    <canvas id="captureCanvas" class="hidden"></canvas>
     <button id="captureBtn" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 hidden">Capture</button>
 
     <!-- Preview + Submit -->
@@ -78,16 +79,16 @@
     });
 
     // Camera button
-    cameraBtn.addEventListener('click', async () => {
+    cameraBtn.addEventListener('click', () => {
       try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        video.srcObject = stream;
+        // Ganti dengan URL stream dari ESP32-CAM
+        video.src = 'https://esp.delta-zero.my.id/stream';
         video.classList.remove('hidden');
         captureBtn.classList.remove('hidden');
         mainButtons.classList.add('hidden');
         cancelCamera.classList.remove('hidden');
       } catch (err) {
-        alert('Error accessing camera: ' + err.message);
+        alert('Error displaying ESP32-CAM stream: ' + err.message);
       }
     });
 
@@ -102,24 +103,43 @@
 
     // Capture image
     captureBtn.addEventListener('click', () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      canvas.getContext('2d').drawImage(video, 0, 0);
-      canvas.toBlob(blob => {
-        const file = new File([blob], 'captured.jpg', { type: 'image/jpeg' });
-        const dataTransfer = new DataTransfer();
-        dataTransfer.items.add(file);
-        imageInputHidden.files = dataTransfer.files;
-        imagePreview.src = URL.createObjectURL(file);
-        previewSection.classList.remove('hidden');
+      const img = document.getElementById('video');
+      const canvas = document.getElementById('captureCanvas');
+      const ctx = canvas.getContext('2d');
 
-        // Reset UI
-        video.classList.add('hidden');
-        captureBtn.classList.add('hidden');
-        cancelCamera.classList.add('hidden');
-        stopCamera();
-      }, 'image/jpeg');
+      const width = img.naturalWidth || img.clientWidth;
+      const height = img.naturalHeight || img.clientHeight;
+
+      canvas.width = width;
+      canvas.height = height;
+
+      try {
+        // Tangkap frame yang sedang terlihat (tidak peduli "complete" atau tidak)
+        console.log("Trying to draw image with width:", width, "height:", height);
+        ctx.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob(blob => {
+          if (!blob) {
+            alert('Gagal menangkap gambar.');
+            return;
+          }
+
+          const file = new File([blob], 'captured.jpg', { type: 'image/jpeg' });
+          const dataTransfer = new DataTransfer();
+          dataTransfer.items.add(file);
+          imageInputHidden.files = dataTransfer.files;
+
+          imagePreview.src = URL.createObjectURL(file);
+          previewSection.classList.remove('hidden');
+
+          img.classList.add('hidden');
+          captureBtn.classList.add('hidden');
+          cancelCamera.classList.add('hidden');
+        }, 'image/jpeg');
+      } catch (err) {
+        console.error(err);
+        alert('Gagal menangkap gambar dari ESP32-CAM.');
+      }
     });
 
     // Back to main menu
